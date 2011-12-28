@@ -30,7 +30,8 @@ namespace ActionBarDemo.Widget.ActionBar
 
         public bool ProgressBarIsVisible { get; private set; }
 
-        public ActionBar(IntPtr doNotUse, JniHandleOwnership transfer) : base(doNotUse, transfer)
+        public ActionBar(IntPtr doNotUse, JniHandleOwnership transfer)
+            : base(doNotUse, transfer)
         {
         }
 
@@ -44,6 +45,11 @@ namespace ActionBarDemo.Widget.ActionBar
             : base(context, attrs, defStyle)
         {
             InternalCtor(context, attrs);
+        }
+
+        ~ActionBar()
+        {
+            Dispose(false);
         }
 
         private void InternalCtor(Context context, IAttributeSet attrs)
@@ -281,9 +287,8 @@ namespace ActionBarDemo.Widget.ActionBar
             }
         }
 
-        public override void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            base.Dispose();
             if (_mActionsView != null)
                 _mActionsView.Dispose();
             if (_mBackIndicator != null)
@@ -302,6 +307,9 @@ namespace ActionBarDemo.Widget.ActionBar
                 _mProgress.Dispose();
             if (_mTitleView != null)
                 _mTitleView.Dispose();
+            if (disposing)
+                GC.SuppressFinalize(this);
+            base.Dispose(disposing);
         }
     }
 }
