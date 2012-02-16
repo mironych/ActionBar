@@ -138,7 +138,7 @@ namespace ActionBarDemo.Widget.ActionBar
 
         public void HideProgressBar()
         {
-            _mProgress.Visibility = ViewStates.Visible;
+            _mProgress.Visibility = ViewStates.Gone;
             ProgressBarIsVisible = false;
         }
 
