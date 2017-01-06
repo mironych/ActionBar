@@ -11,6 +11,7 @@ namespace ActionBarDemo.Widget.ActionBar
 {
     public class ActionBar : RelativeLayout, View.IOnClickListener
     {
+        private static object _actionLock = new object();
         private LayoutInflater _mInflater;
         private RelativeLayout _mBarView;
         private ImageView _mLogoView;
@@ -203,7 +204,11 @@ namespace ActionBarDemo.Widget.ActionBar
 
         private void SetActionEnabled(IAction action, bool enabled)
         {
-            var actionID = _actionsList.Where(k => k.Value.Equals(action)).Select(k => k.Key).SingleOrDefault();
+            Guid actionID = Guid.Empty;
+
+            lock(_actionLock)
+                actionID = _actionsList.Where(k => k.Value.Equals(action)).Select(k => k.Key).SingleOrDefault();                
+                
             if (actionID == Guid.Empty) return;
 
             var childCount = _mActionsView.ChildCount;
@@ -225,7 +230,8 @@ namespace ActionBarDemo.Widget.ActionBar
         public void RemoveAllActions()
         {
             _mActionsView.RemoveAllViews();
-            _actionsList.Clear();
+            lock(_actionLock)
+                _actionsList.Clear();
         }
 
         public void RemoveActionAt(int index)
@@ -235,16 +241,22 @@ namespace ActionBarDemo.Widget.ActionBar
             var strTag = view.Tag == null ? string.Empty : view.Tag.ToString();
             Guid tag;
             if (!Guid.TryParse(strTag, out tag)) return;
-            if (!_actionsList.ContainsKey(tag)) return;
+            
+            lock(_actionLock)
+                if (!_actionsList.ContainsKey(tag)) return;
 
-            _actionsList.Remove(tag);
-            _mActionsView.RemoveViewAt(index);
-            return;
+            lock(_actionLock)
+                _actionsList.Remove(tag);
+            _mActionsView.RemoveViewAt(index);          
         }
 
         public void RemoveAction(IAction action)
         {
-            var actionID = _actionsList.Where(k => k.Value.Equals(action)).Select(k => k.Key).SingleOrDefault();
+            Guid actionID = Guid.Empty;
+            
+            lock(_actionLock)
+                actionID = _actionsList.Where(k => k.Value.Equals(action)).Select(k => k.Key).SingleOrDefault();
+                
             if (actionID == Guid.Empty) return;
 
             var childCount = _mActionsView.ChildCount;
@@ -257,7 +269,8 @@ namespace ActionBarDemo.Widget.ActionBar
                 if (!Guid.TryParse(strTag, out tag)) continue;
                 if (tag != actionID) continue;
                 _mActionsView.RemoveViewAt(i);
-                _actionsList.Remove(tag);
+                lock(_actionLock)
+                    _actionsList.Remove(tag);
                 return;
             }
         }
@@ -271,7 +284,8 @@ namespace ActionBarDemo.Widget.ActionBar
             view.Tag = key.ToString();
             view.Enabled = enabled;
             view.SetOnClickListener(this);
-            _actionsList.Add(key, action);
+            lock(_actionLock)
+                _actionsList.Add(key, action);
             return view;
         }
 
@@ -281,9 +295,10 @@ namespace ActionBarDemo.Widget.ActionBar
             Guid tag;
             if (!Guid.TryParse(strTag, out tag)) return;
 
-            if (_actionsList.ContainsKey(tag))
+            lock (_actionLock)
             {
-                _actionsList[tag].PerformAction();
+                if (_actionsList.ContainsKey(tag))                
+                    _actionsList[tag].PerformAction();                
             }
         }
 
